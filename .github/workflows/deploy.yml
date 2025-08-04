@@ -35,9 +35,9 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "target/*.jar"
-          target: "/opt/weatherapp/"
-          rename: "weatherapp.jar" # Rename to a consistent name
+          source: "target/weather-*.jar"
+          target: "/opt/weatherapp/weatherapp.jar"
+          overwrite: true
 
       # 5. SSH into the server and restart the application service
       - name: Restart Application
