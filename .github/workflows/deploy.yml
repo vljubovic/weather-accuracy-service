@@ -42,6 +42,7 @@ jobs:
           source: "target/weatherapp.jar"
           target: "/opt/weatherapp"
           overwrite: true
+          strip_components: true
 
       # 6. SSH into the server and restart the application service
       - name: Restart Application
