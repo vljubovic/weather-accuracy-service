@@ -1,0 +1,48 @@
+[
+  {
+    "metar_id": 809433723,
+    "icaoId": "LQSA",
+    "receiptTime": "2025-08-04 11:33:38",
+    "obsTime": 1754307000,
+    "reportTime": "2025-08-04 11:30:00",
+    "temp": 19,
+    "dewp": 14,
+    "wdir": 270,
+    "wspd": 5,
+    "wgst": null,
+    "visib": "6+",
+    "altim": 1019,
+    "slp": null,
+    "qcField": 16,
+    "wxString": null,
+    "presTend": null,
+    "maxT": null,
+    "minT": null,
+    "maxT24": null,
+    "minT24": null,
+    "precip": null,
+    "pcp3hr": null,
+    "pcp6hr": null,
+    "pcp24hr": null,
+    "snow": null,
+    "vertVis": null,
+    "metarType": "METAR",
+    "rawOb": "LQSA 041130Z 27005KT 190V320 9999 FEW020 BKN050 19/14 Q1019 NOSIG",
+    "mostRecent": 1,
+    "lat": 43.825,
+    "lon": 18.331,
+    "elev": 505,
+    "prior": 2,
+    "name": "Sarajevo Intl, BI, BA",
+    "clouds": [
+      {
+        "cover": "FEW",
+        "base": 2000
+      },
+      {
+        "cover": "BKN",
+        "base": 5000
+      }
+    ]
+  }
+]

@@ -1,0 +1,30 @@
+{
+  "cities": [
+    {
+      "name": "Sarajevo",
+      "latitude": 43.8563,
+      "longitude": 18.4131,
+      "altitude": 520,
+      "icao_code": "LQSA"
+    }
+  ],
+  "providers": [
+    {
+      "name": "OpenWeatherMap",
+      "enabled": true,
+      "type": "API",
+      "url": "https://api.openweathermap.org/data/2.5/forecast?lat={latitude}&lon={longitude}&appid={apiKey}&cnt=16&units=metric",
+      "apiKey": ""
+    },
+    {
+      "name": "YR.NO",
+      "enabled": true,
+      "type": "API",
+      "url": "https://api.met.no/weatherapi/locationforecast/2.0/complete?lat={latitude}&lon={longitude}&altitude={altitude}"
+    }
+  ],
+  "actualWeatherSource": {
+    "name": "Aviation Weather (METAR)",
+    "url": "https://aviationweather.gov/api/data/metar?ids={}&format=json"
+  }
+}
