@@ -245,21 +245,33 @@ public class DataCollectorService {
         while (matcher.find()) {
             String paramName = matcher.group(1);
             String paramValue = null;
-            
-            // Try to get the parameter from the city first
-            if (city.has(paramName)) {
-                paramValue = city.get(paramName).asText();
-            } 
-            // If not found in city, try the provider
-            else if (provider.has(paramName)) {
-                paramValue = provider.get(paramName).asText();
+
+            // Prioritize reading 'apiKey' from an environment variable for security
+            if ("apiKey".equals(paramName)) {
+                paramValue = System.getenv("OPENWEATHERMAP_API_KEY"); // Name of your environment variable
+                if (paramValue != null && !paramValue.isEmpty()) {
+                    logger.info("Found 'apiKey' in environment variable.");
+                } else {
+                    logger.warn("Environment variable 'OPENWEATHERMAP_API_KEY' not set or empty.");
+                    // Fallback to config file if needed, though not recommended for production
+                    if (provider.has(paramName)) {
+                        paramValue = provider.get(paramName).asText();
+                    }
+                }
+            } else {
+                // Original logic for other parameters (latitude, longitude, etc.)
+                if (city.has(paramName)) {
+                    paramValue = city.get(paramName).asText();
+                } else if (provider.has(paramName)) {
+                    paramValue = provider.get(paramName).asText();
+                }
             }
             
             if (paramValue != null) {
                 // Replace the placeholder with the actual value
                 matcher.appendReplacement(result, paramValue);
             } else {
-                logger.error("Parameter '{}' not found in city or provider configuration", paramName);
+                logger.error("Parameter '{}' not found in config or environment for URL: {}", paramName, urlTemplate);
                 return null;
             }
         }
