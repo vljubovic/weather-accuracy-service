@@ -28,7 +28,11 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      # 4. Securely copy the JAR file to the server
+      # 4. Rename the JAR file to a consistent name
+      - name: Rename JAR for deployment
+        run: mv target/weather-*.jar target/weatherapp.jar
+
+      # 5. Securely copy the JAR file to the server
       - name: SCP JAR to Server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -36,10 +40,10 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "target/weather-*.jar"
-          target: "/opt/weatherapp/weatherapp.jar"
+          target: "/opt/weatherapp"
           overwrite: true
 
-      # 5. SSH into the server and restart the application service
+      # 6. SSH into the server and restart the application service
       - name: Restart Application
         uses: appleboy/ssh-action@v1.0.3
         with:
