@@ -3,9 +3,9 @@
 name: Build and Deploy to Ubuntu Server
 
 on:
-  # Trigger the workflow on pushes to the main branch
+  # Trigger the workflow on pushes to the master branch
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
 
 jobs:
   build-and-deploy:
