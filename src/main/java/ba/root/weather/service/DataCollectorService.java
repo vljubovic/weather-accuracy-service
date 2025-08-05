@@ -26,7 +26,9 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,6 +43,8 @@ public class DataCollectorService {
     private final ForecastDataRepository forecastDataRepository;
     private final WeatherDataParserFactory parserFactory;
     private final ActualWeatherDataRepository actualWeatherDataRepository;
+
+    private final Map<String, String> locationKeyCache = new ConcurrentHashMap<>();
 
     @Autowired
     public DataCollectorService(RestTemplate restTemplate, 
@@ -179,9 +183,24 @@ public class DataCollectorService {
                     String cityName = city.get("name").asText();
                     
                     try {
-                        // Create the actual URL by replacing placeholders
-                        String actualUrl = createUrlWithParameters(urlTemplate, city, provider);
-                        
+                        String actualUrl;
+                        // Special handling for AccuWeather's two-step API process
+                        if ("AccuWeather".equals(providerName)) {
+                            String locationKey = getLocationKey(city, provider);
+                            if (locationKey == null) {
+                                logger.error("Could not retrieve location key for {} from AccuWeather. Skipping.", cityName);
+                                continue;
+                            }
+                            logger.info("Location key for {} is {}", cityName, locationKey);
+                            // Create a temporary node with the location key to build the forecast URL
+                            JsonNode providerWithLocation = ((com.fasterxml.jackson.databind.node.ObjectNode) provider)
+                                    .put("locationKey", locationKey);
+                            actualUrl = createUrlWithParameters(provider.get("url").asText(), city, providerWithLocation);
+                        } else {
+                            // Create the actual URL by replacing placeholders
+                            actualUrl = createUrlWithParameters(provider.get("url").asText(), city, provider);
+                        }
+
                         // Skip if URL couldn't be created
                         if (actualUrl == null) {
                             continue;
@@ -223,7 +242,41 @@ public class DataCollectorService {
             logger.error("Unexpected error in forecast fetching", e);
         }
     }
-    
+
+    // Helper method for AccuWeather
+    private String getLocationKey(JsonNode city, JsonNode provider) {
+        String cityName = city.get("name").asText();
+        if (locationKeyCache.containsKey(cityName)) {
+            logger.info("Found AccuWeather location key for {} in cache.", cityName);
+            return locationKeyCache.get(cityName);
+        }
+
+        String locationUrlTemplate = provider.get("locationUrl").asText();
+        String locationUrl = createUrlWithParameters(locationUrlTemplate, city, provider);
+        if (locationUrl == null) return null;
+
+        try {
+            String response = restTemplate.getForObject(locationUrl, String.class);
+            JsonNode locationResponse = objectMapper.readTree(response);
+
+            // The response is an array, get the first result's "Key"
+            if (locationResponse.isArray() && !locationResponse.isEmpty()) {
+                String key = locationResponse.get(0).get("Key").asText();
+                locationKeyCache.put(cityName, key);
+                return key;
+            } else if (locationResponse.has("Key")) { // Sometimes it's not an array
+                String key = locationResponse.get("Key").asText();
+                locationKeyCache.put(cityName, key);
+                return key;
+            }
+            logger.error("AccuWeather location response did not contain a 'Key' field.");
+            return null;
+        } catch (Exception e) {
+            logger.error("Failed to fetch or parse AccuWeather location key", e);
+            return null;
+        }
+    }
+
     // Helper method to create URL with parameters from city and provider
     private String createUrlWithParameters(String urlTemplate, JsonNode city, JsonNode provider) {
         // Find all placeholders in the URL template
@@ -238,18 +291,21 @@ public class DataCollectorService {
 
             // Prioritize reading 'apiKey' from an environment variable for security
             if ("apiKey".equals(paramName)) {
-                paramValue = System.getenv("OPENWEATHERMAP_API_KEY"); // Name of your environment variable
-                if (paramValue != null && !paramValue.isEmpty()) {
-                    logger.info("Found 'apiKey' in environment variable.");
-                } else {
-                    logger.warn("Environment variable 'OPENWEATHERMAP_API_KEY' not set or empty.");
-                    // Fallback to config file if needed, though not recommended for production
+                String providerName = provider.get("name").asText();
+                if ("AccuWeather".equals(providerName)) {
+                    paramValue = System.getenv("ACCUWEATHER_API_KEY");
+                } else if ("OpenWeatherMap".equals(providerName)) {
+                    paramValue = System.getenv("OPENWEATHERMAP_API_KEY");
+                }
+
+                if (paramValue == null || paramValue.isEmpty()) {
+                    logger.warn("Environment variable for {} apiKey not set. Falling back to config.json.", providerName);
                     if (provider.has(paramName)) {
                         paramValue = provider.get(paramName).asText();
                     }
                 }
             } else {
-                // Original logic for other parameters (latitude, longitude, etc.)
+                // Other parameters (latitude, longitude, etc.)
                 if (city.has(paramName)) {
                     paramValue = city.get(paramName).asText();
                 } else if (provider.has(paramName)) {
