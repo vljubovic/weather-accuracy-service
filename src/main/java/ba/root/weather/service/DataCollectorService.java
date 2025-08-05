@@ -105,17 +105,7 @@ public class DataCollectorService {
                 Weather weatherType;
 
                 if (wxString == null || wxString.isEmpty() || wxString.equals("null")) {
-                    // wxString is missing, fetch the last known weather type from the DB
-                    Optional<ActualWeatherData> lastWeatherOpt = actualWeatherDataRepository.findFirstByCityOrderByMeasurementTimestampDesc(cityName);
-
-                    if (lastWeatherOpt.isPresent()) {
-                        weatherType = lastWeatherOpt.get().getWeather();
-                        logger.info("wxString is null for {}. Using last known weather type: {}", cityName, weatherType);
-                    } else {
-                        // Fallback if no history exists for this city
-                        weatherType = Weather.CLEAR;
-                        logger.warn("wxString is null for {} and no history exists. Defaulting to CLEAR.", cityName);
-                    }
+                    weatherType = Weather.CLEAR;
                 } else {
                     // wxString is present, parse it as usual
                     weatherType = parseWeatherType(wxString);
@@ -393,7 +383,12 @@ public class DataCollectorService {
         Weather weatherType = Weather.CLEAR;
         for (String part : rawOb.split(" ") ) {
             if (part.contains("OVC") || part.contains("BKN")) {
-                return Weather.CLOUDS;
+                if (part.matches("BKN\\d+")) {
+                    int altitude = Integer.parseInt(part.substring(3));
+                    if (altitude < 80) return Weather.CLOUDS;
+                    weatherType = Weather.PARTIAL_CLOUDS;
+                } else
+                    return Weather.CLOUDS;
             }
             if (part.contains("FEW") || part.contains("SCT")) {
                 weatherType = Weather.PARTIAL_CLOUDS;
