@@ -13,7 +13,7 @@
       "name": "OpenWeatherMap",
       "enabled": true,
       "type": "API",
-      "url": "https://api.openweathermap.org/data/2.5/forecast?lat={latitude}&lon={longitude}&appid={apiKey}&cnt=16&units=metric",
+      "url": "https://api.openweathermap.org/data/2.5/forecast?lat={latitude}&lon={longitude}&appid={apiKey}&cnt=40&units=metric",
       "apiKey": ""
     },
     {
